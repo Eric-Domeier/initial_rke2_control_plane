@@ -1,0 +1,41 @@
+- name: Install RKE2 and Enable the service
+  block:
+    - name: Install RKE2
+      ansible.builtin.shell:
+        cmd: curl -sfL https://get.rke2.io | sh -
+      environment:
+        INSTALL_RKE2_VERSION: "{{ RKE2_VERSION }}"
+
+    - name: Create directories
+      ansible.builtin.file:
+        path: "/etc/rancher/rke2"
+        state: directory
+
+    - name: Copy RKE2 Config
+      ansible.builtin.template:
+        src: "{{ role_path }}/templates/config.yaml.j2"
+        dest: /etc/rancher/rke2/config.yaml
+    
+    - name: Enable the rke2-server service
+      systemd:
+        name: rke2-server
+        enabled: yes
+
+    - name: Start the rke2-server service
+      systemd:
+        name: rke2-server
+        state: started
+
+    - name: Add PATH variable to /etc/profile
+      lineinfile:
+        path: /etc/profile
+        line: 'PATH=${PATH}:/opt/rke2/bin:/var/lib/rancher/rke2/bin/'
+        state: present
+        create: yes
+
+    - name: Add PATH variable to /etc/profile
+      lineinfile:
+        path: /etc/profile
+        line: 'export KUBECONFIG=/etc/rancher/rke2/rke2.yaml'
+        state: present
+        create: yes
